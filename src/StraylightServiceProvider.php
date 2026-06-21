@@ -1,0 +1,56 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Straylight;
+
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\ServiceProvider;
+
+final class StraylightServiceProvider extends ServiceProvider
+{
+    #[\Override]
+    public function register(): void
+    {
+        $this->mergeConfigFrom(__DIR__.'/../config/straylight.php', 'straylight');
+
+        Config::set([
+            'database.connections.straylight' => [
+                ...Config::array('straylight.connection'),
+                'url' => null,
+                'database' => ':memory:',
+                'journal_mode' => 'DELETE',
+            ],
+        ]);
+    }
+
+    public function boot(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/../config/straylight.php' => $this->app->configPath('straylight.php'),
+            ], 'straylight-config');
+        }
+
+        DB::extend('straylight', function (array $config, string $name) {
+            $connection = new StraylightConnection(
+                fn () => new StraylightConnector()->connect($config),
+                Arr::string($config, 'database'),
+                Arr::string($config, 'prefix'),
+                ['driver' => 'sqlite', 'name' => $name] + $config,
+            );
+
+            if (Arr::get($config, 'lock.store') !== null) {
+                $connection->setReadPdo(fn () => new StraylightConnector()->connectReadOnly($config));
+            }
+
+            return $connection;
+        });
+
+        $this->app->terminating(function () {
+            StraylightConnection::purgeAll();
+        });
+    }
+}
