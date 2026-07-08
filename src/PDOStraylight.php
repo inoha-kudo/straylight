@@ -20,6 +20,11 @@ final class PDOStraylight extends Sqlite
         parent::__construct('sqlite:'.$tmpFile, options: $options);
     }
 
+    public function __destruct()
+    {
+        $this->close();
+    }
+
     public function close(): void
     {
         if ($this->inTransaction()) {
