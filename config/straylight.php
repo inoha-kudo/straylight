@@ -14,6 +14,11 @@ return [
         'pragmas' => [
             'locking_mode' => 'EXCLUSIVE',
         ],
+        'lock' => [
+            'store' => env('STRAYLIGHT_LOCK_STORE'),
+            'seconds' => (int) env('STRAYLIGHT_LOCK_SECONDS', 0),
+            'wait_seconds' => (int) env('STRAYLIGHT_LOCK_WAIT_SECONDS', 10),
+        ],
     ],
 
 ];

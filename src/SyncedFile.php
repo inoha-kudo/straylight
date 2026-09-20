@@ -14,14 +14,23 @@ final class SyncedFile
 
     private function __construct(
         private readonly FileSynchronizer $synchronizer,
+        private readonly ?FileLock $lock,
     ) {
         $this->path = $this->synchronizer->pull();
         $this->originalHash = $this->hash();
     }
 
-    public static function open(FileSynchronizer $synchronizer): self
+    public static function open(FileSynchronizer $synchronizer, ?FileLock $lock = null): self
     {
-        return new self($synchronizer);
+        $lock?->acquire();
+
+        try {
+            return new self($synchronizer, $lock);
+        } catch (\Throwable $e) {
+            $lock?->release();
+
+            throw $e;
+        }
     }
 
     public function close(): void
@@ -31,7 +40,7 @@ final class SyncedFile
         }
 
         if (! file_exists($this->path)) {
-            $this->closed = true;
+            $this->discard();
 
             throw new \RuntimeException('Temporary file no longer exists.');
         }
@@ -40,9 +49,24 @@ final class SyncedFile
             $this->synchronizer->push($this->path);
         }
 
+        $this->discard();
+    }
+
+    public function discard(): void
+    {
+        if ($this->closed) {
+            return;
+        }
+
         $this->closed = true;
 
-        unlink($this->path);
+        try {
+            if (file_exists($this->path)) {
+                unlink($this->path);
+            }
+        } finally {
+            $this->lock?->release();
+        }
     }
 
     public function path(): string

@@ -29,7 +29,11 @@ final class PDOStraylight extends Sqlite
         try {
             $this->close();
         } catch (\Throwable) {
-            return;
+            try {
+                $this->file->discard();
+            } catch (\Throwable) {
+                return;
+            }
         }
     }
 
