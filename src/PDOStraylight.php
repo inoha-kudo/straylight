@@ -15,14 +15,22 @@ final class PDOStraylight extends Sqlite
         private readonly SyncedFile $file,
         array $options = [],
     ) {
-        $tmpFile = $this->file->open();
+        try {
+            parent::__construct('sqlite:'.$this->file->path(), options: $options);
+        } catch (\Throwable $e) {
+            $this->file->close();
 
-        parent::__construct('sqlite:'.$tmpFile, options: $options);
+            throw $e;
+        }
     }
 
     public function __destruct()
     {
-        $this->close();
+        try {
+            $this->close();
+        } catch (\Throwable) {
+            return;
+        }
     }
 
     public function close(): void

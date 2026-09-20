@@ -11,10 +11,20 @@ final class StraylightConnection extends SQLiteConnection
 {
     public static function purgeAll(): void
     {
+        $exception = null;
+
         foreach (DB::getConnections() as $name => $connection) {
             if ($connection instanceof self) {
-                DB::purge($name);
+                try {
+                    DB::purge($name);
+                } catch (\Throwable $e) {
+                    $exception ??= $e;
+                }
             }
+        }
+
+        if ($exception !== null) {
+            throw $exception;
         }
     }
 

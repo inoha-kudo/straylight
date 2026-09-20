@@ -24,7 +24,7 @@ final class StraylightConnector extends SQLiteConnector
         assert(is_string($path));
 
         return new PDOStraylight(
-            new SyncedFile(new FileSynchronizer(Storage::disk($disk), $path)),
+            SyncedFile::open(new FileSynchronizer(Storage::disk($disk), $path)),
             $options,
         );
     }

@@ -6,40 +6,53 @@ namespace Straylight;
 
 final class SyncedFile
 {
-    private ?string $tmpFile = null;
+    private readonly string $path;
 
-    private ?string $originalHash = null;
+    private readonly string $originalHash;
 
-    public function __construct(
+    private bool $closed = false;
+
+    private function __construct(
         private readonly FileSynchronizer $synchronizer,
-    ) {}
+    ) {
+        $this->path = $this->synchronizer->pull();
+        $this->originalHash = $this->hash();
+    }
 
-    public function open(): string
+    public static function open(FileSynchronizer $synchronizer): self
     {
-        $this->tmpFile = $this->synchronizer->pull();
-        $this->originalHash = $this->hash($this->tmpFile);
-
-        return $this->tmpFile;
+        return new self($synchronizer);
     }
 
     public function close(): void
     {
-        if ($this->tmpFile === null || ! file_exists($this->tmpFile)) {
+        if ($this->closed) {
             return;
         }
 
-        try {
-            if ($this->hash($this->tmpFile) !== $this->originalHash) {
-                $this->synchronizer->push($this->tmpFile);
-            }
-        } finally {
-            unlink($this->tmpFile);
+        if (! file_exists($this->path)) {
+            $this->closed = true;
+
+            throw new \RuntimeException('Temporary file no longer exists.');
         }
+
+        if ($this->hash() !== $this->originalHash) {
+            $this->synchronizer->push($this->path);
+        }
+
+        $this->closed = true;
+
+        unlink($this->path);
     }
 
-    private function hash(string $filename): string
+    public function path(): string
     {
-        $hash = md5_file($filename);
+        return $this->path;
+    }
+
+    private function hash(): string
+    {
+        $hash = md5_file($this->path);
 
         if ($hash === false) {
             throw new \RuntimeException('Could not calculate MD5 hash.');
