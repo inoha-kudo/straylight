@@ -76,10 +76,10 @@ final class SyncedFile
 
     private function hash(): string
     {
-        $hash = md5_file($this->path);
+        $hash = hash_file('xxh128', $this->path);
 
         if ($hash === false) {
-            throw new \RuntimeException('Could not calculate MD5 hash.');
+            throw new \RuntimeException('Could not calculate XXH128 hash.');
         }
 
         return $hash;
