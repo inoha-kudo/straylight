@@ -8,6 +8,7 @@ use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Database\Connectors\SQLiteConnector;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Pdo\Sqlite;
 
 final class StraylightConnector extends SQLiteConnector
 {
@@ -29,9 +30,21 @@ final class StraylightConnector extends SQLiteConnector
             SyncedFile::open(
                 new FileSynchronizer(Storage::disk($disk), $path),
                 $this->createLock($config, 'straylight:'.sha1($disk.':'.$path)),
+                ($options[Sqlite::ATTR_OPEN_FLAGS] ?? null) === Sqlite::OPEN_READONLY,
             ),
             $options,
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     */
+    public function connectReadOnly(array $config): \PDO
+    {
+        return $this->connect(array_replace_recursive($config, [
+            'lock' => ['store' => null],
+            'options' => [Sqlite::ATTR_OPEN_FLAGS => Sqlite::OPEN_READONLY],
+        ]));
     }
 
     /**

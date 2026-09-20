@@ -44,12 +44,18 @@ final class StraylightServiceProvider extends ServiceProvider
             assert(is_string($database));
             assert(is_string($prefix));
 
-            return new StraylightConnection(
+            $connection = new StraylightConnection(
                 fn () => new StraylightConnector()->connect($config),
                 $database,
                 $prefix,
                 ['driver' => 'sqlite', 'name' => $name] + $config,
             );
+
+            if (isset($config['lock']['store'])) {
+                $connection->setReadPdo(fn () => new StraylightConnector()->connectReadOnly($config));
+            }
+
+            return $connection;
         });
 
         $this->app->terminating(function () {

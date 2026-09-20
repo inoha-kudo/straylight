@@ -31,12 +31,18 @@ final class StraylightConnection extends SQLiteConnection
     #[\Override]
     public function disconnect(): void
     {
-        $pdo = $this->getRawPdo();
-
-        if ($pdo instanceof PDOStraylight) {
-            $pdo->close();
+        foreach ([$this->getRawPdo(), $this->getRawReadPdo()] as $pdo) {
+            if ($pdo instanceof PDOStraylight) {
+                $pdo->close();
+            }
         }
 
         parent::disconnect();
+    }
+
+    #[\Override]
+    public function getReadPdo(): \PDO
+    {
+        return $this->getRawPdo() instanceof \PDO ? $this->getPdo() : parent::getReadPdo();
     }
 }

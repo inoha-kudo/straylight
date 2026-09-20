@@ -8,24 +8,25 @@ final class SyncedFile
 {
     private readonly string $path;
 
-    private readonly string $originalHash;
+    private readonly ?string $originalHash;
 
     private bool $closed = false;
 
     private function __construct(
         private readonly FileSynchronizer $synchronizer,
         private readonly ?FileLock $lock,
+        bool $readOnly,
     ) {
         $this->path = $this->synchronizer->pull();
-        $this->originalHash = $this->hash();
+        $this->originalHash = $readOnly ? null : $this->hash();
     }
 
-    public static function open(FileSynchronizer $synchronizer, ?FileLock $lock = null): self
+    public static function open(FileSynchronizer $synchronizer, ?FileLock $lock = null, bool $readOnly = false): self
     {
         $lock?->acquire();
 
         try {
-            return new self($synchronizer, $lock);
+            return new self($synchronizer, $lock, $readOnly);
         } catch (\Throwable $e) {
             $lock?->release();
 
@@ -45,7 +46,7 @@ final class SyncedFile
             throw new \RuntimeException('Temporary file no longer exists.');
         }
 
-        if ($this->hash() !== $this->originalHash) {
+        if ($this->originalHash !== null && $this->hash() !== $this->originalHash) {
             $this->synchronizer->push($this->path);
         }
 
