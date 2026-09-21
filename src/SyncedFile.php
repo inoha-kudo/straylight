@@ -40,17 +40,17 @@ final class SyncedFile
             return;
         }
 
-        if (! file_exists($this->path)) {
+        try {
+            if (! file_exists($this->path)) {
+                throw new \RuntimeException('Temporary file no longer exists.');
+            }
+
+            if ($this->originalHash !== null && $this->hash() !== $this->originalHash) {
+                $this->synchronizer->push($this->path);
+            }
+        } finally {
             $this->discard();
-
-            throw new \RuntimeException('Temporary file no longer exists.');
         }
-
-        if ($this->originalHash !== null && $this->hash() !== $this->originalHash) {
-            $this->synchronizer->push($this->path);
-        }
-
-        $this->discard();
     }
 
     public function discard(): void
