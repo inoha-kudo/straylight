@@ -18,7 +18,7 @@ final class StraylightServiceProvider extends ServiceProvider
             'straylight',
         );
 
-        config([
+        Config::set([
             'database.connections.straylight' => [
                 ...Config::array('straylight.connection'),
                 'url' => null,
@@ -32,7 +32,7 @@ final class StraylightServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__.'/../config/straylight.php' => config_path('straylight.php'),
+                __DIR__.'/../config/straylight.php' => $this->app->configPath('straylight.php'),
             ], 'straylight-config');
         }
 
