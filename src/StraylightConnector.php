@@ -19,19 +19,8 @@ final class StraylightConnector extends SQLiteConnector
     #[\Override]
     public function createConnection($dsn, array $config, array $options): \PDO
     {
-        [$disk, $path] = [
-            $config['disk'] ?? null, $config['path'] ?? null,
-        ];
-
-        assert(is_string($disk));
-        assert(is_string($path));
-
         return new PDOStraylight(
-            SyncedFile::open(
-                new FileSynchronizer(Storage::disk($disk), $path),
-                $this->createLock($config, 'straylight:'.sha1($disk.':'.$path)),
-                ($options[Sqlite::ATTR_OPEN_FLAGS] ?? null) === Sqlite::OPEN_READONLY,
-            ),
+            $this->openSyncedFile($config, ($options[Sqlite::ATTR_OPEN_FLAGS] ?? null) === Sqlite::OPEN_READONLY),
             $options,
         );
     }
@@ -45,6 +34,25 @@ final class StraylightConnector extends SQLiteConnector
             'lock' => ['store' => null],
             'options' => [Sqlite::ATTR_OPEN_FLAGS => Sqlite::OPEN_READONLY],
         ]));
+    }
+
+    /**
+     * @param  array<string, mixed>  $config
+     */
+    private function openSyncedFile(array $config, bool $readOnly): SyncedFile
+    {
+        [$disk, $path] = [
+            $config['disk'] ?? null, $config['path'] ?? null,
+        ];
+
+        assert(is_string($disk));
+        assert(is_string($path));
+
+        return SyncedFile::open(
+            new FileSynchronizer(Storage::disk($disk), $path),
+            $this->createLock($config, 'straylight:'.sha1($disk.':'.$path)),
+            $readOnly,
+        );
     }
 
     /**
