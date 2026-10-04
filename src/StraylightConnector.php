@@ -13,8 +13,8 @@ use Pdo\Sqlite;
 final class StraylightConnector extends SQLiteConnector
 {
     /**
-     * @param  array<string, mixed>  $config
-     * @param  array<int, mixed>  $options
+     * @param  array<mixed>  $config
+     * @param  array<mixed>  $options
      */
     #[\Override]
     public function createConnection($dsn, array $config, array $options): \PDO
@@ -26,7 +26,7 @@ final class StraylightConnector extends SQLiteConnector
     }
 
     /**
-     * @param  array<string, mixed>  $config
+     * @param  array<mixed>  $config
      */
     public function connectReadOnly(array $config): \PDO
     {
@@ -37,7 +37,7 @@ final class StraylightConnector extends SQLiteConnector
     }
 
     /**
-     * @param  array<string, mixed>  $config
+     * @param  array<mixed>  $config
      */
     private function openSyncedFile(array $config, bool $readOnly): SyncedFile
     {
@@ -56,7 +56,7 @@ final class StraylightConnector extends SQLiteConnector
     }
 
     /**
-     * @param  array<string, mixed>  $config
+     * @param  array<mixed>  $config
      */
     private function createLock(array $config, string $name): ?FileLock
     {

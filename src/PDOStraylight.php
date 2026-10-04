@@ -9,7 +9,7 @@ use Pdo\Sqlite;
 final class PDOStraylight extends Sqlite
 {
     /**
-     * @param  array<int, mixed>  $options
+     * @param  array<mixed>  $options
      */
     public function __construct(
         private readonly SyncedFile $file,

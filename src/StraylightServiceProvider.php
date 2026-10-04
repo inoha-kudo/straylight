@@ -51,7 +51,11 @@ final class StraylightServiceProvider extends ServiceProvider
                 ['driver' => 'sqlite', 'name' => $name] + $config,
             );
 
-            if (isset($config['lock']['store'])) {
+            $lock = $config['lock'] ?? [];
+
+            assert(is_array($lock));
+
+            if (isset($lock['store'])) {
                 $connection->setReadPdo(fn () => new StraylightConnector()->connectReadOnly($config));
             }
 
