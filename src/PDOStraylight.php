@@ -18,7 +18,7 @@ final class PDOStraylight extends Sqlite
         try {
             parent::__construct('sqlite:'.$this->file->path(), options: $options);
         } catch (\Throwable $e) {
-            $this->file->close();
+            $this->file->discard();
 
             throw $e;
         }
