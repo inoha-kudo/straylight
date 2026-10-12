@@ -6,6 +6,7 @@ namespace Straylight;
 
 use Illuminate\Contracts\Cache\LockProvider;
 use Illuminate\Database\Connectors\SQLiteConnector;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Pdo\Sqlite;
@@ -42,11 +43,8 @@ final class StraylightConnector extends SQLiteConnector
     private function openSyncedFile(array $config, bool $readOnly): SyncedFile
     {
         [$disk, $path] = [
-            $config['disk'] ?? null, $config['path'] ?? null,
+            Arr::string($config, 'disk'), Arr::string($config, 'path'),
         ];
-
-        assert(is_string($disk));
-        assert(is_string($path));
 
         return SyncedFile::open(
             new FileSynchronizer(Storage::disk($disk), $path),
@@ -60,26 +58,17 @@ final class StraylightConnector extends SQLiteConnector
      */
     private function createLock(array $config, string $name): ?FileLock
     {
-        $lock = $config['lock'] ?? [];
-
-        assert(is_array($lock));
-
-        if (is_null($store = $lock['store'] ?? null)) {
+        if (Arr::get($config, 'lock.store') === null) {
             return null;
         }
 
-        [$seconds, $waitSeconds] = [
-            $lock['seconds'] ?? 0, $lock['wait_seconds'] ?? 10,
-        ];
-
-        assert(is_string($store));
-        assert(is_int($seconds));
-        assert(is_int($waitSeconds));
-
-        $provider = Cache::store($store)->getStore();
+        $provider = Cache::store(Arr::string($config, 'lock.store'))->getStore();
 
         assert($provider instanceof LockProvider);
 
-        return new FileLock($provider->lock($name, $seconds), $waitSeconds);
+        return new FileLock(
+            $provider->lock($name, Arr::integer($config, 'lock.seconds', 0)),
+            Arr::integer($config, 'lock.wait_seconds', 10),
+        );
     }
 }

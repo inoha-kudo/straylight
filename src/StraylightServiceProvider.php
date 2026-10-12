@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Straylight;
 
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -37,25 +38,14 @@ final class StraylightServiceProvider extends ServiceProvider
         }
 
         DB::extend('straylight', function (array $config, string $name) {
-            [$database, $prefix] = [
-                $config['database'] ?? null, $config['prefix'] ?? null,
-            ];
-
-            assert(is_string($database));
-            assert(is_string($prefix));
-
             $connection = new StraylightConnection(
                 fn () => new StraylightConnector()->connect($config),
-                $database,
-                $prefix,
+                Arr::string($config, 'database'),
+                Arr::string($config, 'prefix'),
                 ['driver' => 'sqlite', 'name' => $name] + $config,
             );
 
-            $lock = $config['lock'] ?? [];
-
-            assert(is_array($lock));
-
-            if (isset($lock['store'])) {
+            if (Arr::get($config, 'lock.store') !== null) {
                 $connection->setReadPdo(fn () => new StraylightConnector()->connectReadOnly($config));
             }
 
