@@ -14,10 +14,7 @@ final class StraylightServiceProvider extends ServiceProvider
     #[\Override]
     public function register(): void
     {
-        $this->mergeConfigFrom(
-            __DIR__.'/../config/straylight.php',
-            'straylight',
-        );
+        $this->mergeConfigFrom(__DIR__.'/../config/straylight.php', 'straylight');
 
         Config::set([
             'database.connections.straylight' => [
